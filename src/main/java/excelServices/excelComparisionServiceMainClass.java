@@ -10,6 +10,7 @@ import java.util.Iterator;
 import java.util.Map;
 import java.util.Map.Entry;
 
+import org.apache.poi.ss.formula.functions.Column;
 import org.apache.poi.ss.usermodel.Cell;
 import org.apache.poi.ss.usermodel.CellType;
 import org.apache.poi.ss.usermodel.Row;
@@ -21,17 +22,32 @@ import org.apache.poi.xssf.usermodel.XSSFSheet;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 
 public class excelComparisionServiceMainClass {
-
-
 	static int file1_column_NO = 0; // Enter first file column value to compare
-	static int file2_column_NO = 1; // Enter second file column value to compare
+	static int file2_column_NO = 0; // Enter second file column value to compare
 	static int file2_column_NO_additional = 1;
 	static int file1_column_NO_additional = 1;
-	static String file_name1 = "dbStats_10.34.57.232-22020.xlsx";
-	static String file_name2 = "dbStats_10.34.57.232-22020_1.xlsx";
+	static String file_name1 = "dbStats_10.34.57.232-22020_1.xlsx";
+	static String file_name2 = "dbStats_10.34.57.232-22020.xlsx"; // In this file the write operation will be happened
 	static String combination_2 = null;
+	static String arithmaticCoumnName = "COLLECTION SIZE";
 
 	public static void main(String[] args) {
+		
+		long startTime = System.currentTimeMillis();
+        boolean converted = true;
+        try {
+        	CsvToEacelConverter converter = new CsvToEacelConverter();
+            String strSource = "dbStats_10.34.57.232-22020_1213.csv";
+            String strDestination = "C:/Users/Lenovo/Desktop/MyGIT";
+            converter.convertCsvToExcel(strSource, strDestination, ".xlsx");
+        } catch (Exception e) {
+            System.out.println("Unexpected exception");
+            e.printStackTrace();
+            converted = false;
+        }
+        if (converted) {
+            System.out.println("Conversion took " + ((System.currentTimeMillis() - startTime) / 1000) + " seconds");
+        }
 
 		try {
 			HashMap<Integer, ArrayList> map = new HashMap<Integer, ArrayList>();
@@ -75,11 +91,15 @@ public class excelComparisionServiceMainClass {
 				}
 				map.put(row_n, arr);
 			}
-
-//			System.out.println("Final output " + map);
-			excelCompareAndWrite(map, header);
-			file1.close();
-			file2.close();
+//			excelCompareAndWrite(map, header);
+//			excelColumnArithmaticOperation objArithmaticOperation = new excelColumnArithmaticOperation();
+//			try {
+//				objArithmaticOperation.columnDifferenceFinder(file_name2, arithmaticCoumnName);
+//			} catch (IOException e) {
+//				e.printStackTrace();
+//			}
+//			file1.close();
+//			file2.close();
 		} catch (FileNotFoundException e) {
 			e.printStackTrace();
 		} catch (IOException e) {
@@ -97,7 +117,6 @@ public class excelComparisionServiceMainClass {
 		Iterator<Cell> iterator = header1.iterator();
 		XSSFRow row1 = s.getRow(0);
 		int j = sheet2_cellNo;
-
 		while (iterator.hasNext()) { // Logic to insert the header into the sheet
 			Cell cell1 = iterator.next();
 			XSSFCell c = row1.createCell(j);
@@ -110,7 +129,7 @@ public class excelComparisionServiceMainClass {
 			int max_cell = sheet2_cellNo;
 			Row sheet2_row = row_sheet2.next();
 			Cell cell_value_tobe_compared = sheet2_row.getCell(file1_column_NO);
-			
+
 			System.out.println("sheet2: Data is going to be inserted on column no: " + max_cell
 					+ ", By taking the data for the comparison : " + cell_value_tobe_compared);
 			Iterator<Map.Entry<Integer, ArrayList>> new_Iterator = map.entrySet().iterator();
@@ -118,7 +137,7 @@ public class excelComparisionServiceMainClass {
 				Map.Entry<Integer, ArrayList> new_Map = (Map.Entry<Integer, ArrayList>) new_Iterator.next();
 
 				if (cell_value_tobe_compared.getCellType() == CellType.NUMERIC) {
-					
+
 					int value1 = ((Double) new_Map.getValue().get(file2_column_NO)).intValue();
 					int value2 = (int) cell_value_tobe_compared.getNumericCellValue();
 					if (value1 == value2) {
@@ -128,26 +147,22 @@ public class excelComparisionServiceMainClass {
 				if (cell_value_tobe_compared.getCellType() == CellType.STRING) {
 					String data1 = (String) new_Map.getValue().get(file2_column_NO);
 					String data2 = cell_value_tobe_compared.getStringCellValue();
-					if(file1_column_NO_additional !=0 )
-					{
+					if (file1_column_NO_additional != 0) {
 						Cell data1_additionalString = sheet2_row.getCell(file1_column_NO_additional);
-						combination_2 = data2+"|"+data1_additionalString;
+						combination_2 = data2 + "|" + data1_additionalString;
 					}
-					if(file2_column_NO_additional !=0 )
-					{
+					if (file2_column_NO_additional != 0) {
 						String data2_additionalString = (String) new_Map.getValue().get(file2_column_NO_additional);
-						String combination_1 = data2+"|"+data2_additionalString;
+						String combination_1 = data2 + "|" + data2_additionalString;
 						if (combination_1.equals(combination_2)) {
 							insertDataMethod(new_Map, max_cell, sheet2_row);
 						}
+					} else {
+						if (data1.equals(data2)) {
+							insertDataMethod(new_Map, max_cell, sheet2_row);
+						}
 					}
-					else {
-					if (data1.equals(data2)) {
-						insertDataMethod(new_Map, max_cell, sheet2_row);
-					}
-					}
-				}
-				else {
+				} else {
 					{
 						System.out.println("Cell data type is not   with the expected format !!");
 					}
